@@ -13,12 +13,11 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sunnyweather.MainActivity
 import com.example.sunnyweather.R
-import com.example.sunnyweather.ui.PlaceViewModel
 import com.example.sunnyweather.ui.weather.WeatherActivity
 import kotlinx.android.synthetic.main.fragment_place.*
 
 class PlaceFragment: Fragment() {
-
+    //使用懒加载技术来获取PlaceViewModel的实例
     val viewModel by lazy { ViewModelProviders.of(this).get(PlaceViewModel::class.java) }
 
     private lateinit var adapter: PlaceAdapter
@@ -29,6 +28,7 @@ class PlaceFragment: Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        //对存储状态进行判断和读取，且只有Fragment被嵌入MainActivity中，并且之前已经存在选中的城市，才会跳转到WeatherActivity
         if (activity is MainActivity && viewModel.isPlacedSaved()){
             val place = viewModel.getSavedPlace()
             val intent = Intent(context, WeatherActivity::class.java).apply {
@@ -40,10 +40,13 @@ class PlaceFragment: Fragment() {
             activity?.finish()
             return
         }
+        //设置LayoutManager
         val layoutManager = LinearLayoutManager(activity)
         recyclerView.layoutManager = layoutManager
+        //设置适配器，使用PlaceViewModel中的placeList集合作为数据源
         adapter = PlaceAdapter(this, viewModel.placeList)
         recyclerView.adapter = adapter
+        //调用EditText的addTextChangedListener()方法来监听搜索框内容的变化情况
         searchPlaceEdit.addTextChangedListener { editable ->
             val content = editable.toString()
             if (content.isNotEmpty()){
@@ -55,6 +58,7 @@ class PlaceFragment: Fragment() {
                 adapter.notifyDataSetChanged()
             }
         }
+        //获取到服务器响应的数据
         viewModel.placeLiveData.observe(this, Observer { result ->
             val places = result.getOrNull()
             if (places != null){

@@ -2,15 +2,15 @@ package com.example.sunnyweather.ui.weather
 
 import android.content.Context
 import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
-import android.text.Layout
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
@@ -32,10 +32,13 @@ class WeatherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val decorView = window.decorView
-        decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        window.statusBarColor = Color.TRANSPARENT
+        if(Build.VERSION.SDK_INT >= 21) {
+            val decorView = window.decorView
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            window.statusBarColor = Color.TRANSPARENT
+        }
         setContentView(R.layout.activity_weather)
+        //从Intent中取出经纬度坐标和地区名称，并赋值到WeatherViewModel的相应变量中
         if (viewModel.locationLng.isEmpty()){
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
         }
@@ -45,6 +48,7 @@ class WeatherActivity : AppCompatActivity() {
         if (viewModel.placeName.isEmpty()){
             viewModel.placeName = intent.getStringExtra("placeName") ?: ""
         }
+        //对weatherLiveData对象进行观察
         viewModel.weatherLiveData.observe(this, Observer { result ->
             val weather = result.getOrNull()
             if (weather != null){
@@ -57,8 +61,9 @@ class WeatherActivity : AppCompatActivity() {
         })
         swipeRefresh.setColorSchemeResources(R.color.design_default_color_primary)
         refreshWeather()
-        viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
-
+        swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
         navBtn.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
         }
@@ -86,7 +91,7 @@ class WeatherActivity : AppCompatActivity() {
         viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
         swipeRefresh.isRefreshing = true
     }
-
+    //从Weather对象中获取数据，然后显示到对应的控件上
     private fun showWeatherInfo(weather: Weather) {
         placeName.text = viewModel.placeName
         val realtime = weather.realtime
@@ -94,7 +99,7 @@ class WeatherActivity : AppCompatActivity() {
         //填充now.xml布局中的数据
         val currentTempText = "${realtime.temperature.toInt()} ℃"
         currentTemp.text = currentTempText
-        currentTemp.text = getSky(realtime.skycon).info
+        currentSky.text = getSky(realtime.skycon).info
         val currentPM25Text = "空气指数${realtime.airQuality.aqi.chn.toInt()}"
         currentAQI.text = currentPM25Text
         nowLayout.setBackgroundResource(getSky(realtime.skycon).bg)
@@ -105,7 +110,7 @@ class WeatherActivity : AppCompatActivity() {
             val skycon = daily.skycon[i]
             val temperature = daily.temperature[i]
             val view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false)
-            val dataInfo = view.findViewById(R.id.dateInfo) as TextView
+            val dateInfo = view.findViewById(R.id.dateInfo) as TextView
             val skyIcon = view.findViewById(R.id.skyIcon) as ImageView
             val skyInfo = view.findViewById(R.id.skyInfo) as TextView
             val temperatureInfo = view.findViewById(R.id.temperatureInfo) as TextView
