@@ -32,11 +32,6 @@ class WeatherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if(Build.VERSION.SDK_INT >= 21) {
-            val decorView = window.decorView
-            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            window.statusBarColor = Color.TRANSPARENT
-        }
         setContentView(R.layout.activity_weather)
         //从Intent中取出经纬度坐标和地区名称，并赋值到WeatherViewModel的相应变量中
         if (viewModel.locationLng.isEmpty()){
